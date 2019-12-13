@@ -1,0 +1,34 @@
+import Foundation
+
+<% for type in types.protocols where type.implements.keys.contains("Service") { -%>
+
+extension Client: <%= type.name %> {
+    
+<% for method in type.methods { -%>
+    
+    func <%= method.name %> -> <%= method.returnTypeName %> {
+        let method = "<%= method.annotations["method"]! %>"
+        
+        <% var path = method.annotations["path"]! as! String %>
+        <% for param in method.parameters.filter({ $0.typeName.name.hasPrefix("Path<") }) { -%>
+    <% path = path.replacingOccurrences(of: "<\(param.name)>", with: "\\(\(param.name).value)") %>
+        <% } -%>
+    
+        let path = "<%= path %>"
+        
+        let url = Self.baseURL.appendingPathComponent(path)
+        var request = URLRequest(url: url)
+    
+        request.httpMethod = method
+    
+    <% if let indexOfBodyParameter = method.parameters.firstIndex(where: { $0.typeName.name.hasPrefix("Body<") }) { -%>
+        request.httpBody = <%= method.parameters[indexOfBodyParameter].name %>.value.encoded()
+    <% } -%>
+        return perform(request: request)
+    }
+    
+<% } -%>
+        
+}
+
+<% } -%>
