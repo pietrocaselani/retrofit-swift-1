@@ -1,72 +1,81 @@
 import Foundation
-
-public struct Single<T> {}
+import Combine
 
 public protocol Service {
     static var baseURL: URL { get }
-    
-    func perform<T: Decodable>(request: URLRequest) -> Single<T>
 }
 
-final class Client: Service {
+public enum HTTP {
+    public typealias Query = [String: String]
+}
+
+public protocol Queryable {
+    func encoded() throws -> HTTP.Query
+}
+
+public protocol Client {
+    func perform<T: Decodable>(request: URLRequest) -> AnyPublisher<T, Error>
+}
+
+public final class DefaultClient: Client {
     
-    static var baseURL: URL {
-        URL(string: "https://google.com/")!
+    public let session: URLSession
+    
+    public init(session: URLSession = .shared) {
+        self.session = session
     }
     
-    let session: URLSession = .shared
+    public func perform<T>(request: URLRequest) -> AnyPublisher<T, Error> where T : Decodable {
+        session.dataTaskPublisher(for: request)
+            .map { $0.data }
+            .decode(type: T.self, decoder: JSONDecoder()) // FIXME: Inject decoder
+            .eraseToAnyPublisher()
+    }
     
-    func perform<T: Decodable>(request: URLRequest) -> Single<T> {
-        
-        let task = session.dataTask(with: request) { data, response, error in
-            
-        }
+}
 
-        task.resume()
-        
-        return Single<T>()
+public struct Query<T: CustomStringConvertible> {
+    public let value : T
+    
+    public init(_ value: T) {
+        self.value = value
     }
 }
 
-struct User: Codable {}
-
-struct Query<T> {
-    let value : T
+public struct Queries<T: Queryable> {
+    public let value : T
+    
+    public init(_ value: T) {
+        self.value = value
+    }
 }
 
-struct Path<T> {
-    let value: T
+public struct Path<T: CustomStringConvertible> {
+    public let value : T
+    
+    public init(_ value: T) {
+        self.value = value
+    }
 }
 
-struct Body<T: Encodable> {
-    let value: T
+public struct Body<T: Encodable> {
+    public let value : T
+    
+    public init(_ value: T) {
+        self.value = value
+    }
 }
 
-struct Header<T> {
-    let value: T
+public struct Header<T: CustomStringConvertible> {
+    public let value : T
+    
+    public init(_ value: T) {
+        self.value = value
+    }
 }
 
-struct UpdatedUser: Codable {}
-
-public struct Empty: Decodable {}
-
-protocol UsersService: Service {
-    
-    // sourcery: path = "api/v1/users"
-    // sourcery: method = "GET"
-    func getAllUsers() -> Single<[User]>
-    
-    // sourcery: path = "api/v1/users"
-    // sourcery: method = "POST"
-    func postUser(user: Body<User>) -> Single<Empty>
-    
-    // sourcery: path = "api/v1/users/<userID>"
-    // sourcery: method = "PUT"
-    func putUser(userID: Path<String>, updateUser: Body<UpdatedUser>) -> Single<User>
-    
-    // sourcery: path = "api/v1/users/<userID>/address/<addressID>"
-    // sourcery: method = "PUT"
-    func putAddress(userID: Path<String>, addressID: Path<String>) -> Single<User>
+public struct Empty: Decodable {
+    public init() {}
 }
 
 extension Encodable {

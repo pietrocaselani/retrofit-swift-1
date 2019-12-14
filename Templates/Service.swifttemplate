@@ -1,34 +1,63 @@
 import Foundation
+import Combine
 
 <% for type in types.protocols where type.implements.keys.contains("Service") { -%>
+    
+// sourcery:file:<%= type.name %>.generated.swift
 
-extension Client: <%= type.name %> {
+extension <%= type.annotations["client"]! %>: <%= type.name %> {
     
 <% for method in type.methods { -%>
     
     func <%= method.name %> -> <%= method.returnTypeName %> {
-        let method = "<%= method.annotations["method"]! %>"
-        
         <% var path = method.annotations["path"]! as! String %>
+        
         <% for param in method.parameters.filter({ $0.typeName.name.hasPrefix("Path<") }) { -%>
-    <% path = path.replacingOccurrences(of: "<\(param.name)>", with: "\\(\(param.name).value)") %>
+            <% path = path.replacingOccurrences(of: "<\(param.name)>", with: "\\(\(param.name).value.description)") %>
         <% } -%>
     
         let path = "<%= path %>"
         
         let url = Self.baseURL.appendingPathComponent(path)
-        var request = URLRequest(url: url)
+        var component = URLComponents(url: url, resolvingAgainstBaseURL: false)!
     
-        request.httpMethod = method
+        <% let queryParams = method.parameters.filter { $0.typeName.name.hasPrefix("Query<") } -%>
+        <% if !queryParams.isEmpty { -%>
+        
+        component.queryItems = (component.queryItems ?? []) + [
+        <% for param in queryParams { -%>
+            URLQueryItem(name: "<%= param.name %>", value: <%= param.name %>.value.description),
+        <% } -%>
+        ]
+        
+        <% } -%>
     
-    <% if let indexOfBodyParameter = method.parameters.firstIndex(where: { $0.typeName.name.hasPrefix("Body<") }) { -%>
+        var request = URLRequest(url: component.url!)
+    
+        <% let headerParams = method.parameters.filter { $0.typeName.name.hasPrefix("Header<") } -%>
+        <% if !headerParams.isEmpty { -%>
+        request.allHTTPHeaderFields = [
+            <% for param in headerParams { -%>
+                "<%= param.name %>": <%= param.name %>.value.description,
+            <% } -%>
+        ]
+        <% } -%>
+        
+        request.httpMethod = "<%= method.annotations["method"]! %>"
+    
+        <% if let indexOfBodyParameter = method.parameters.firstIndex(where: { $0.typeName.name.hasPrefix("Body<") }) { -%>
+        
         request.httpBody = <%= method.parameters[indexOfBodyParameter].name %>.value.encoded()
-    <% } -%>
+
+        <% } -%>
+        
         return perform(request: request)
     }
     
 <% } -%>
         
 }
+    
+// sourcery:end
 
 <% } -%>
