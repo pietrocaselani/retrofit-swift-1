@@ -1,9 +1,8 @@
-import Foundation
-import Combine
-
 <% for type in types.protocols where type.implements.keys.contains("Service") { -%>
     
 // sourcery:file:<%= type.name %>.generated.swift
+import Foundation
+import Combine
 
 extension <%= type.annotations["client"]! %>: <%= type.name %> {
     
