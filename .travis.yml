@@ -1,0 +1,12 @@
+language: objective-c
+osx_image: xcode11
+script:
+  - swift build
+  - swift test
+  - sonar-scanner
+
+addons:
+  sonarcloud:
+    organization: "grsouza"
+    token:
+      secure: "rsbuZUpCjRjhKLmDJ9QIET98Az27YP310KF5g0krDQhlbwzD6Ij5cSICSR+OdJdP8e/+zGIZnlvOGGjkIO8zmj2fKfIFhaMNUy6wh5vZaooXuZZBYP4m6a0c9HPrw6FP+RHmQsNHwkz8NHbN+WQwvWGHJCJHJXskRHNHNjqyVddM6OX18l5d9914y8mRpfVc7GG6GG7h7P5kfbQGLIn2OBQJuifH/c+FyyWS3aOPdWcjkbEf41vPXkJ99/AoPR+YIsnE7sTukomonCKyjyvg1bDb+R/nGEblhocjGgas0tDycLLC9qIKJHyDSx/CD8mAiqrJydDX5v0IAqEISF1rr76J9CH0UR5Y5w5lbazUGpUb2Df4yM3AFJEL47hX6QnpVNy+zq+bD7Jt5TBcDFyqrapscj7VxRPwqVTylUqNe2S0jArD0jmFyn6Ha3ch6iFLfZMYEoS1ATcYbL9GsQqelevuDz142E4ejxzI3uQFje5UPorNJW6yE5WsCkG7sbhU9Eh+msQ8DZku2JRxYUeOH3FIGKBCCTKRApkgpQ4CpTLFpdPiFmWbJjjSj8xVuH5V82iIFlb+EQhd3JLJtBx8EU4cvjgTb/7121c4PQujxz5IiGXtalUz9s+qFhTBC6zqsDxNpuxZrur2gjefOtSBoZfuSLJrVji7Y8Zx8PuNaNA="
