@@ -4,7 +4,7 @@
 import Foundation
 import Combine
 
-extension <%= type.annotations["client"]! %>: <%= type.name %> {
+extension <%= type.annotations["client"] ?? "RootResponder" %>: <%= type.name %> {
     
 <% for method in type.methods { -%>
     
@@ -46,11 +46,15 @@ extension <%= type.annotations["client"]! %>: <%= type.name %> {
     
         <% if let indexOfBodyParameter = method.parameters.firstIndex(where: { $0.typeName.name.hasPrefix("Body<") }) { -%>
         
-        request.httpBody = <%= method.parameters[indexOfBodyParameter].name %>.value.encoded()
+        do {
+            request.httpBody = try <%= method.parameters[indexOfBodyParameter].name %>.value.encode()
+        } catch {
+            return Fail(error: error).eraseToAnyPublisher()
+        }
 
         <% } -%>
         
-        return perform(request: request)
+        return respond(to: request).tryMap { try $0.decode() }.eraseToAnyPublisher()
     }
     
 <% } -%>

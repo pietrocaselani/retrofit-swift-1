@@ -4,7 +4,7 @@
 import Foundation
 import Combine
 
-extension DefaultClient: JokesService {
+extension RootResponder: JokesService {
     
     
     func fetchRandomJoke() -> AnyPublisher<Joke, Error> {
@@ -23,7 +23,7 @@ extension DefaultClient: JokesService {
         request.httpMethod = "GET"
     
                 
-        return perform(request: request)
+        return respond(to: request).tryMap { try $0.decode() }.eraseToAnyPublisher()
     }
     
     
@@ -48,7 +48,7 @@ extension DefaultClient: JokesService {
         request.httpMethod = "GET"
     
                 
-        return perform(request: request)
+        return respond(to: request).tryMap { try $0.decode() }.eraseToAnyPublisher()
     }
     
     
@@ -68,7 +68,7 @@ extension DefaultClient: JokesService {
         request.httpMethod = "GET"
     
                 
-        return perform(request: request)
+        return respond(to: request).tryMap { try $0.decode() }.eraseToAnyPublisher()
     }
     
     
@@ -88,7 +88,7 @@ extension DefaultClient: JokesService {
         request.httpMethod = "GET"
     
                 
-        return perform(request: request)
+        return respond(to: request).tryMap { try $0.decode() }.eraseToAnyPublisher()
     }
     
     
@@ -113,7 +113,7 @@ extension DefaultClient: JokesService {
         request.httpMethod = "GET"
     
                 
-        return perform(request: request)
+        return respond(to: request).tryMap { try $0.decode() }.eraseToAnyPublisher()
     }
     
     
@@ -133,14 +133,18 @@ extension DefaultClient: JokesService {
         request.httpMethod = "POST"
     
                 
-        request.httpBody = newJoke.value.encoded()
+        do {
+            request.httpBody = try newJoke.value.encode()
+        } catch {
+            return Fail(error: error).eraseToAnyPublisher()
+        }
 
                 
-        return perform(request: request)
+        return respond(to: request).tryMap { try $0.decode() }.eraseToAnyPublisher()
     }
     
     
-    func updateJoke( id: Path<String>, updatedJoke: Body<UpdateJoke>) -> AnyPublisher<Joke, Error> {
+    func updateJoke(id: Path<String>, updatedJoke: Body<UpdateJoke>) -> AnyPublisher<Joke, Error> {
         
         
                     
@@ -157,10 +161,14 @@ extension DefaultClient: JokesService {
         request.httpMethod = "PUT"
     
                 
-        request.httpBody = updatedJoke.value.encoded()
+        do {
+            request.httpBody = try updatedJoke.value.encode()
+        } catch {
+            return Fail(error: error).eraseToAnyPublisher()
+        }
 
                 
-        return perform(request: request)
+        return respond(to: request).tryMap { try $0.decode() }.eraseToAnyPublisher()
     }
     
         

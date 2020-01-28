@@ -5,44 +5,51 @@ public protocol Service {
     static var baseURL: URL { get }
 }
 
-public enum HTTP {
-    public typealias Query = [String: String]
+public protocol Responder {
+    func respond(to request: URLRequest) -> AnyPublisher<Response, Error>
 }
 
-public protocol Queryable {
-    func encoded() throws -> HTTP.Query
+public final class RootResponder: Responder {
+    
+    public let middlewares: [RequestMiddleware]
+    
+    public init(middlewares: [RequestMiddleware]) {
+        self.middlewares = middlewares
+    }
+    
+    public func respond(to request: URLRequest) -> AnyPublisher<Response, Error> {
+        return middlewares
+            .makeResponder(chainingTo: self)
+            .respond(to: request)
+    }
+    
 }
 
-public protocol Client {
-    func perform<T: Decodable>(request: URLRequest) -> AnyPublisher<T, Error>
-}
-
-public final class DefaultClient: Client {
+final class PerformHTTPRequestResponder: Responder {
     
     public let session: URLSession
     
-    public init(session: URLSession = .shared) {
+    public init(session: URLSession) {
         self.session = session
     }
     
-    public func perform<T>(request: URLRequest) -> AnyPublisher<T, Error> where T : Decodable {
-        session.dataTaskPublisher(for: request)
-            .map { $0.data }
-            .decode(type: T.self, decoder: JSONDecoder()) // FIXME: Inject decoder
-            .eraseToAnyPublisher()
+    func respond(to request: URLRequest) -> AnyPublisher<Response, Error> {
+        return session.dataTaskPublisher(for: request)
+            .map { data, response in
+                let httpResponse = response as! HTTPURLResponse
+                return Response(
+                    body: data,
+                    statusCode: httpResponse.statusCode,
+                    headerFields: httpResponse.allHeaderFields
+                )
+        }
+        .mapError { $0 as Error }
+        .eraseToAnyPublisher()
     }
     
 }
 
 public struct Query<T: CustomStringConvertible> {
-    public let value : T
-    
-    public init(_ value: T) {
-        self.value = value
-    }
-}
-
-public struct Queries<T: Queryable> {
     public let value : T
     
     public init(_ value: T) {
@@ -79,7 +86,13 @@ public struct Empty: Decodable {
 }
 
 extension Encodable {
-    func encoded() -> Data {
-        return try! JSONEncoder().encode(self)
+    func encode(encoder: JSONEncoder = .init()) throws -> Data {
+        return try encoder.encode(self)
+    }
+}
+
+extension Data {
+    func decode<T: Decodable>(type: T.Type = T.self, decoder: JSONDecoder = .init()) throws -> T {
+        return try decoder.decode(type, from: self)
     }
 }

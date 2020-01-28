@@ -37,7 +37,6 @@ extension Service {
     public static var baseURL: URL { URL(string: "https://api.chucknorris.io/")! }
 }
 
-// sourcery: client = "DefaultClient"
 protocol JokesService: Service {
     
     // sourcery: path = "jokes/random"
@@ -66,5 +65,5 @@ protocol JokesService: Service {
     
     // sourcery: path = "jokes/<id>"
     // sourcery: method = "PUT"
-    func updateJoke( id: Path<String>, updatedJoke: Body<UpdateJoke>) -> AnyPublisher<Joke, Error>
+    func updateJoke(id: Path<String>, updatedJoke: Body<UpdateJoke>) -> AnyPublisher<Joke, Error>
 }
