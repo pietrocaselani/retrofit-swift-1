@@ -8,7 +8,8 @@
 import Foundation
 import Combine
 
-public final class LoggerMiddleware: Middleware {
+@available(OSX 10.15, *)
+public final class LoggerMiddleware: RequestMiddleware {
     
     public init() {}
     

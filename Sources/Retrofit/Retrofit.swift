@@ -5,10 +5,12 @@ public protocol Service {
     static var baseURL: URL { get }
 }
 
+@available(OSX 10.15, *)
 public protocol Responder {
     func respond(to request: URLRequest) -> AnyPublisher<Response, Error>
 }
 
+@available(OSX 10.15, *)
 public final class RootResponder: Responder {
     
     public let middlewares: [RequestMiddleware]
@@ -25,6 +27,7 @@ public final class RootResponder: Responder {
     
 }
 
+@available(OSX 10.15, *)
 final class PerformHTTPRequestResponder: Responder {
     
     public let session: URLSession
